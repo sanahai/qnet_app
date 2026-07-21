@@ -9,10 +9,8 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <meta name="theme-color" content="#2563eb" />
 
-<script src="https://ads-partners.coupang.com/g.js"></script>
-<script>
-	new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"680","height":"140","tsource":""});
-</script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+        crossorigin="anonymous"></script>
 
 <style>
   :root {
@@ -378,6 +376,22 @@
   }
   .fee-note a { color: var(--accent); }
   .modal .ad-slot { margin-top: 18px; }
+  .qnet-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .qnet-banner:hover { opacity: 0.92; }
+  .qnet-banner-arrow { font-size: 16px; }
 </style>
 </head>
 <body>
@@ -385,7 +399,7 @@
 <div class="page">
 
 <header>
-  <h1>큐넷 자격증 시험일정</h1>
+  <h1>큐넷 자격증 시험일정 대시보드</h1>
   <p>공공데이터포털 · 한국산업인력공단(Q-Net) Open API 기반</p>
   <div id="meta-banner"></div>
 </header>
@@ -446,7 +460,7 @@
     <section>
       <h4>과목 정보 조회</h4>
       <div id="modal-jmcd-help" style="font-size:12px;color:var(--muted);margin-bottom:8px;">
-        이 회차에는 여러 종목이 함께 시행돼요. 정확한 시험과목/검정방법/합격기준을 보려면 아래에서 본인이 응시할 종목을 선택하세요.
+        이 회차에는 여러 종목이 함께 시행돼요. 정확한 시험과목을 보려면 아래에서 본인이 응시할 종목을 선택하세요.
       </div>
       <input type="text" id="modal-jm-search" placeholder="종목명 검색 (예: 정보처리기사)" list="modal-jm-list" />
       <datalist id="modal-jm-list"></datalist>
@@ -460,6 +474,10 @@
         <a href="https://www.q-net.or.kr/rcv011.do?id=rcv01102" target="_blank">필기시험 수수료</a> ·
         <a href="https://www.q-net.or.kr/rcv013.do?id=rcv01305" target="_blank">실기시험 수수료 종목검색</a>
       </div>
+      <a class="qnet-banner" href="https://www.q-net.or.kr" target="_blank" rel="noopener">
+        <span>큐넷(Q-Net)에서 원서 접수 · 공지사항 바로 확인하기</span>
+        <span class="qnet-banner-arrow">→</span>
+      </a>
     </section>
 
     <div class="ad-slot" style="height:90px;">
@@ -601,6 +619,17 @@ function getRelevantQualifications(item) {
   return bySeries.length > 0 ? bySeries : byGb;
 }
 
+// 큐넷 API가 contents 앞에 "BODY {...} P {...} LI {...}" 같은 워드프로세서 CSS
+// 스타일 정의를 그대로 붙여서 주는 경우가 있어서, 그 부분만 잘라내고
+// 실제 텍스트만 남긴다. (HTML 태그는 안 들어있고 순수 텍스트라 태그 제거는 불필요)
+function cleanQnetText(text) {
+  if (!text) return "";
+  const cleaned = text
+    .replace(/^(?:\s*[A-Za-z][A-Za-z0-9_-]*\s*\{[^}]*\}\s*)+/, "")
+    .trim();
+  return cleaned.replace(/\n/g, "<br>");
+}
+
 function openModal(item, searchQuery) {
   document.getElementById("modal-title").textContent =
     `${item.qualgbNmKo || item.qualgbNm || ""} · ${item.implYy}년 제${item.implSeq}회`;
@@ -614,7 +643,7 @@ function openModal(item, searchQuery) {
   listEl.innerHTML = relevant.map(q => `<option value="${q.jmfldnm}">`).join("");
 
   const helpEl = document.getElementById("modal-jmcd-help");
-  helpEl.textContent = `이 회차와 관련된 종목 ${relevant.length}개 중에서 본인이 응시할 종목을 선택하면, 정확한 시험과목/검정방법/합격기준을 볼 수 있어요.`;
+  helpEl.textContent = `이 회차와 관련된 종목 ${relevant.length}개 중에서 본인이 응시할 종목을 선택하면, 정확한 시험과목을 볼 수 있어요.`;
 
   const resultEl = document.getElementById("modal-detail-result");
   const searchInput = document.getElementById("modal-jm-search");
@@ -627,10 +656,17 @@ function openModal(item, searchQuery) {
       resultEl.innerHTML = `<div class="fee-note">이 종목의 상세 과목정보가 아직 수집되지 않았어요. fetch_qnet.py를 --with-details 옵션으로 다시 실행해보세요.</div>`;
       return;
     }
-    resultEl.innerHTML = detail.info.map(i => `
+    // 큐넷 API는 출제경향/출제기준/취득방법/응시자격 등 여러 항목을 같이 주는데,
+    // 실제로 필요한 건 "시험과목 및 배점"(실제 시험 과목 정보) 뿐이라 그것만 보여준다.
+    const subjectInfo = detail.info.filter(i => i.infogb === "시험과목 및 배점");
+    if (subjectInfo.length === 0) {
+      resultEl.innerHTML = `<div class="fee-note">이 종목은 시험과목 정보가 큐넷에 등록돼 있지 않아요.</div>`;
+      return;
+    }
+    resultEl.innerHTML = subjectInfo.map(i => `
       <div class="detail-block">
-        <span class="infogb">${i.infogb}</span>
-        ${(i.contents || "").replace(/\n/g, "<br>")}
+        <span class="infogb">시험과목</span>
+        ${cleanQnetText(i.contents)}
       </div>
     `).join("");
   };
