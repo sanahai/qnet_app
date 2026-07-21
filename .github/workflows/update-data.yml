@@ -1,1 +1,38 @@
+name: 큐넷 시험일정 자동 갱신
 
+on:
+  schedule:
+    - cron: "30 0 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 의존성 설치
+        run: pip install requests
+
+      - name: 시험일정 수집
+        env:
+          QNET_SERVICE_KEY: ${{ secrets.QNET_SERVICE_KEY }}
+        run: |
+          python fetch_qnet.py --service-key "$QNET_SERVICE_KEY" --years $(date +%Y) $(( $(date +%Y) + 1 ))
+
+      - name: 변경사항 커밋
+        run: |
+          git config user.name "qnet-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/*.json
+          git diff --cached --quiet || git commit -m "chore: 시험일정 데이터 자동 갱신"
+          git push
