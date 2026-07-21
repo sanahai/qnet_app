@@ -96,30 +96,48 @@ def fetch_qualification_list(service_key: str, max_retries: int = 3) -> list:
             except Exception:
                 pass
             time.sleep(2 * attempt)
+        except requests.RequestException as e:
+            last_error = e
+            print(f"  경고: 네트워크 오류 ({attempt}/{max_retries}차 시도): {e}")
+            time.sleep(2 * attempt)
 
     print(f"  실패: {max_retries}번 재시도했지만 계속 실패했습니다: {last_error}")
     return []
 
 
-def fetch_qualification_detail(service_key: str, jm_cd: str) -> list:
+def fetch_qualification_detail(service_key: str, jm_cd: str, max_retries: int = 2) -> list:
     """특정 종목코드(jmCd)의 자격정보(시험과목/검정방법/합격기준/출제경향 등)를 가져온다.
     참고: 이 API는 응시수수료를 직접 제공하지 않는다. 정확한 응시료는 큐넷 공식
     수수료 안내 페이지(필기: rcv011.do?id=rcv01102, 실기: rcv013.do?id=rcv01305)를
     참고해야 한다 - 종목별로 실기 재료비 등이 달라 API로 일괄 제공되지 않는다.
+
+    613개 종목을 순서대로 조회하다 보면 그중 몇 개는 타임아웃/네트워크 오류가
+    나기 마련이다. 여기서 예외가 새어나가면 전체 스크립트가 죽고, 그러면
+    이미 잘 받아온 시험일정(schedules.json)까지 커밋되지 못하고 날아간다.
+    그래서 실패한 종목은 재시도 후 조용히 건너뛰고 나머지는 계속 진행한다.
     """
-    resp = requests.get(
-        QUAL_DETAIL_URL,
-        params={"ServiceKey": service_key, "jmCd": jm_cd},
-        headers=HEADERS,
-        timeout=30,
-    )
-    resp.raise_for_status()
-    root = ET.fromstring(resp.content)
-    items = []
-    for item in root.iter("item"):
-        rec = {child.tag: (child.text or "").strip() for child in item}
-        items.append(rec)
-    return items
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(
+                QUAL_DETAIL_URL,
+                params={"ServiceKey": service_key, "jmCd": jm_cd},
+                headers=HEADERS,
+                timeout=30,
+            )
+            resp.raise_for_status()
+            root = ET.fromstring(resp.content)
+            items = []
+            for item in root.iter("item"):
+                rec = {child.tag: (child.text or "").strip() for child in item}
+                items.append(rec)
+            return items
+        except (requests.RequestException, ET.ParseError) as e:
+            last_error = e
+            time.sleep(1 * attempt)
+
+    print(f"    경고: {jm_cd} 상세정보 조회 실패(건너뜀): {last_error}")
+    return []
 
 
 def fetch_schedule(service_key: str, impl_yy: str, qualgb_cd: str) -> list:
@@ -259,11 +277,14 @@ def main():
 
     # 3) (선택) 종목별 자격정보 - 시험과목/검정방법/합격기준/출제경향
     detail_count = 0
+    details_by_jmcd = {}
     if args.with_details:
         print("[3/3] 종목별 자격정보(과목/검정방법 등) 수집 중...")
         target_codes = args.jmcd if args.jmcd else sorted(jmcd_to_name.keys())
-        details_by_jmcd = {}
+        detail_path = os.path.join(out_dir, "qual_details.json")
         for i, jm_cd in enumerate(target_codes, 1):
+            # 종목 하나에서 무슨 일이 나든(타임아웃, 파싱 오류 등) 전체 스크립트가
+            # 죽어서는 안 된다 - 이미 받은 시험일정까지 커밋 못 하고 날아가기 때문.
             try:
                 items = fetch_qualification_detail(args.service_key, jm_cd)
                 if items:
@@ -276,13 +297,19 @@ def main():
                         ],
                     }
                 detail_count += 1
-                if i % 25 == 0:
-                    print(f"    ... {i}/{len(target_codes)}")
-            except requests.HTTPError:
-                pass
+            except Exception as e:
+                print(f"    경고: {jm_cd} 처리 중 예외 발생(건너뜀): {e}")
+
+            if i % 25 == 0:
+                print(f"    ... {i}/{len(target_codes)}")
+                # 중간중간 저장해두면, 혹시 중간에 워크플로가 타임아웃 나도
+                # 그때까지 모은 데이터는 남는다.
+                with open(detail_path, "w", encoding="utf-8") as f:
+                    json.dump(details_by_jmcd, f, ensure_ascii=False, indent=2)
+
             time.sleep(0.15)
 
-        with open(os.path.join(out_dir, "qual_details.json"), "w", encoding="utf-8") as f:
+        with open(detail_path, "w", encoding="utf-8") as f:
             json.dump(details_by_jmcd, f, ensure_ascii=False, indent=2)
         print(f"  -> {len(details_by_jmcd)}개 종목의 상세정보 저장됨")
 
@@ -293,7 +320,7 @@ def main():
         "schedule_count": len(all_schedules),
         "qualification_count": len(qualifications),
         "with_details": bool(args.with_details),
-        "detail_count": detail_count,
+        "detail_count": len(details_by_jmcd) if args.with_details else 0,
     }
     with open(os.path.join(out_dir, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
@@ -302,7 +329,7 @@ def main():
     print(f"완료: 시험일정 {len(all_schedules)}건, 종목 {len(qualifications)}건 저장됨 -> {out_dir}")
     print("이제 이 폴더에서 다음을 실행한 뒤 브라우저로 열어보세요:")
     print("  python -m http.server 8000")
-    print("  -> http://localhost:8000/dashboard.html")
+    print("  -> http://localhost:8000/index.html")
 
 
 if __name__ == "__main__":
@@ -311,4 +338,3 @@ if __name__ == "__main__":
     except requests.HTTPError as e:
         print(f"HTTP 오류: {e}", file=sys.stderr)
         sys.exit(1)
-
