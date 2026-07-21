@@ -67,6 +67,7 @@ def fetch_qualification_list(service_key: str) -> list:
     resp = requests.get(
         QUAL_LIST_URL,
         params={"serviceKey": service_key},
+        headers=HEADERS,
         timeout=30,
     )
     resp.raise_for_status()
@@ -95,6 +96,7 @@ def fetch_qualification_detail(service_key: str, jm_cd: str) -> list:
     resp = requests.get(
         QUAL_DETAIL_URL,
         params={"ServiceKey": service_key, "jmCd": jm_cd},
+        headers=HEADERS,
         timeout=30,
     )
     resp.raise_for_status()
@@ -124,6 +126,7 @@ def fetch_schedule(service_key: str, impl_yy: str, qualgb_cd: str) -> list:
             },
             timeout=30,
         )
+        headers=HEADERS,
         resp.raise_for_status()
 
         try:
