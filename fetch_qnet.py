@@ -126,7 +126,7 @@ def fetch_schedule(service_key: str, impl_yy: str, qualgb_cd: str) -> list:
     """특정 연도/자격구분의 시험일정을 페이지네이션하며 전부 가져온다."""
     all_items = []
     page = 1
-    num_of_rows = 100
+    num_of_rows = 50  # 이 API는 페이지당 최대 50건까지만 허용함
     while True:
         resp = requests.get(
             SCHEDULE_URL,
@@ -150,18 +150,22 @@ def fetch_schedule(service_key: str, impl_yy: str, qualgb_cd: str) -> list:
             print(" ", resp.text[:500])
             break
 
-        body = data.get("response", {}).get("body", data)
-        items = body.get("items", [])
+        # 응답이 {"response": {...}} 형태일 수도, {"header":..., "body":...} 형태일 수도 있음
+        envelope = data.get("response", data)
+        header = envelope.get("header", {})
+        body = envelope.get("body", {})
+
+        result_code = header.get("resultCode")
+        if result_code not in (None, "00", "0"):
+            msg = header.get("resultMsg")
+            print(f"  경고: API 오류 응답 ({impl_yy}/{qualgb_cd}): {result_code} {msg}")
+            break
+
+        items = body.get("items", []) if isinstance(body, dict) else []
         if isinstance(items, dict):
             items = items.get("item", [])
         if isinstance(items, dict):
             items = [items]
-
-        result_code = data.get("response", {}).get("header", {}).get("resultCode")
-        if result_code not in (None, "00", "0"):
-            msg = data.get("response", {}).get("header", {}).get("resultMsg")
-            print(f"  경고: API 오류 응답 ({impl_yy}/{qualgb_cd}): {result_code} {msg}")
-            break
 
         if not items:
             break
