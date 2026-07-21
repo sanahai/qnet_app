@@ -4,7 +4,7 @@
 
 const CACHE_NAME = "qnet-dashboard-v1";
 const PRECACHE_URLS = [
-  "./dashboard.html",
+  "./index.html",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
