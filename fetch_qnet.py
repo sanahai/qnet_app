@@ -43,6 +43,11 @@ import xml.etree.ElementTree as ET
 
 import requests
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    "Accept": "application/json, text/xml, */*",
+}
+
 QUAL_LIST_URL = "http://openapi.q-net.or.kr/api/service/rest/InquiryListNationalQualifcationSVC/getList"
 SCHEDULE_URL = "http://apis.data.go.kr/B490007/qualExamSchd/getQualExamSchdList"
 # 종목별 자격정보(시험과목/검정방법/합격기준/출제경향 등). jmCd(종목코드) 필요.
@@ -285,3 +290,4 @@ if __name__ == "__main__":
     except requests.HTTPError as e:
         print(f"HTTP 오류: {e}", file=sys.stderr)
         sys.exit(1)
+
