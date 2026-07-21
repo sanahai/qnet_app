@@ -2,7 +2,7 @@
   "name": "큐넷 자격증 시험일정",
   "short_name": "시험일정",
   "description": "국가자격 종목별 시험일정, 접수일, 합격발표일을 한눈에 확인하는 앱",
-  "start_url": "./dashboard.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
