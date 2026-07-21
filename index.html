@@ -527,13 +527,18 @@ function pickNextEvent(item) {
   return latestPast;
 }
 
+// "15일 이내 일정만 보기"의 기준이 되는 일수. 카드 목록 필터와 박스 안 날짜
+// 표시 둘 다 이 값을 같이 써야, "필터는 통과했는데 박스 안에는 15일 넘은
+// 날짜가 보이는" 것 같은 불일치가 안 생긴다.
+const UPCOMING_RANGE_DAYS = 15;
+
 // 필기 / 실기·면접 을 서로 다른 박스로 나눠서 보여준다.
 // 날짜가 하나도 없는 단계는 아예 박스를 만들지 않는다 (예: 필기 없이 실기만 있는 종목).
-// 그리고 이미 다 지나간 단계(다가오는 날짜가 하나도 없는 단계)도 아예 보여주지 않고,
-// 아직 진행 중이거나 앞으로 있을 단계만 파란 박스로 표시한다.
+// 그리고 이미 지난 날짜나 15일보다 먼 날짜는 보여주지 않고,
+// 오늘부터 15일 이내에 있는 단계만 파란 박스로 표시한다.
 function isRowUpcoming(dateStr) {
   const n = daysUntil(dateStr);
-  return n !== null && n >= 0;
+  return n !== null && n >= 0 && n <= UPCOMING_RANGE_DAYS;
 }
 
 function renderTimelineBoxes(item) {
@@ -541,13 +546,13 @@ function renderTimelineBoxes(item) {
     { label: "접수기간", value: (item._docRegStart || item._docRegEnd) ? `${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}` : null, upcoming: isRowUpcoming(item._docRegEnd) || isRowUpcoming(item._docRegStart) },
     { label: "시험일", value: (item._docExamStart || item._docExamEnd) ? `${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}` : null, upcoming: isRowUpcoming(item._docExamEnd) || isRowUpcoming(item._docExamStart) },
     { label: "합격발표", value: item._docPass ? fmt(item._docPass) : null, upcoming: isRowUpcoming(item._docPass) },
-  ].filter(r => r.value);
+  ].filter(r => r.value && r.upcoming);
 
   const practicalRows = [
     { label: "접수기간", value: (item._pracRegStart || item._pracRegEnd) ? `${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}` : null, upcoming: isRowUpcoming(item._pracRegEnd) || isRowUpcoming(item._pracRegStart) },
     { label: "시험일", value: (item._pracExamStart || item._pracExamEnd) ? `${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}` : null, upcoming: isRowUpcoming(item._pracExamEnd) || isRowUpcoming(item._pracExamStart) },
     { label: "최종합격발표", value: item._pracPass ? fmt(item._pracPass) : null, upcoming: isRowUpcoming(item._pracPass) },
-  ].filter(r => r.value);
+  ].filter(r => r.value && r.upcoming);
 
   const boxHtml = (title, rows) => `
     <div class="phase-box phase-upcoming">
@@ -556,14 +561,12 @@ function renderTimelineBoxes(item) {
     </div>
   `;
 
-  // 단계 전체가 이미 다 지나갔으면(모든 날짜가 과거면) 그 박스는 아예 표시하지 않는다.
-  const writtenUpcoming = writtenRows.some(r => r.upcoming);
-  const practicalUpcoming = practicalRows.some(r => r.upcoming);
-
+  // writtenRows/practicalRows는 위에서 이미 "15일 이내에 있는 날짜"만 남긴 것이라
+  // 배열에 뭐라도 남아있으면 그 단계를 보여주면 된다.
   let html = "";
-  if (writtenRows.length > 0 && writtenUpcoming) html += boxHtml("필기시험", writtenRows);
-  if (practicalRows.length > 0 && practicalUpcoming) html += boxHtml("실기/면접시험", practicalRows);
-  if (!html) html = `<div class="phase-box phase-empty">진행 중인 일정이 없어요 (모든 단계 종료)</div>`;
+  if (writtenRows.length > 0) html += boxHtml("필기시험", writtenRows);
+  if (practicalRows.length > 0) html += boxHtml("실기/면접시험", practicalRows);
+  if (!html) html = `<div class="phase-box phase-empty">15일 이내 진행되는 일정이 없어요</div>`;
 
   return `<div class="phase-boxes">${html}</div>`;
 }
@@ -578,6 +581,20 @@ function hasUpcomingWithinDays(item, days) {
     const n = daysUntil(d);
     return n !== null && n >= 0 && n <= days;
   });
+}
+
+// 같은 회차(자격구분+연도+회차)가 데이터에 두 번 이상 들어있는 경우가 있어서,
+// 화면에 보여주기 직전에 중복을 제거한다.
+function dedupeSchedules(list) {
+  const seen = new Set();
+  const result = [];
+  for (const item of list) {
+    const key = `${item.qualgbCd}::${item.implYy}::${item.implSeq}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
 }
 
 let SCHEDULES = [];
@@ -752,7 +769,7 @@ function render() {
 
   let filtered = SCHEDULES.filter(item => {
     if (qualgb && item.qualgbCd !== qualgb) return false;
-    if (onlyFuture && !hasUpcomingWithinDays(item, 15)) return false;
+    if (onlyFuture && !hasUpcomingWithinDays(item, UPCOMING_RANGE_DAYS)) return false;
     if (q) {
       const hay = `${item.qualgbNmKo || ""} ${item.description || ""} ${item.implYy || ""} ${item.implSeq || ""}`.toLowerCase();
       const direct = hay.includes(q);
@@ -846,7 +863,7 @@ async function init() {
       loadJSON("data/qualifications.json").catch(() => []),
       loadJSON("data/qual_details.json").catch(() => ({})),
     ]);
-    SCHEDULES = schedules;
+    SCHEDULES = dedupeSchedules(schedules);
     QUALIFICATIONS = qualifications;
     QUAL_DETAILS = qualDetails;
 
