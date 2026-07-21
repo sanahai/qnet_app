@@ -509,6 +509,19 @@ function getMatchingSeries(q) {
   return result;
 }
 
+// 이 회차(item)에 실제로 관련된 종목만 골라낸다.
+// description에 종목의 계열명(seriesnm)이 포함돼 있는 것만 선택하고,
+// 혹시 그 방식으로 하나도 못 찾으면(설명 형식이 다른 예외 케이스) 자격구분 전체로 되돌아간다.
+function getRelevantQualifications(item) {
+  const byGb = QUALIFICATIONS.filter(q => (q.qualgbcd || q.qualgbCd) === item.qualgbCd);
+  const desc = item.description || "";
+  const bySeries = byGb.filter(q => {
+    const series = q.seriesnm || q.seriesNm || "";
+    return series && desc.includes(series);
+  });
+  return bySeries.length > 0 ? bySeries : byGb;
+}
+
 function openModal(item) {
   document.getElementById("modal-title").textContent =
     `${item.qualgbNmKo || item.qualgbNm || ""} · ${item.implYy}년 제${item.implSeq}회`;
@@ -524,9 +537,12 @@ function openModal(item) {
     <div class="tl-item"><span class="lbl">최종발표</span>${fmt(item._pracPass)}</div>
   `;
 
-  const relevant = QUALIFICATIONS.filter(q => (q.qualgbcd || q.qualgbCd) === item.qualgbCd);
+  const relevant = getRelevantQualifications(item);
   const listEl = document.getElementById("modal-jm-list");
   listEl.innerHTML = relevant.map(q => `<option value="${q.jmfldnm}">`).join("");
+
+  const helpEl = document.getElementById("modal-jmcd-help");
+  helpEl.textContent = `이 회차와 관련된 종목 ${relevant.length}개 중에서 본인이 응시할 종목을 선택하면, 정확한 시험과목/검정방법/합격기준을 볼 수 있어요.`;
 
   const searchInput = document.getElementById("modal-jm-search");
   searchInput.value = "";
