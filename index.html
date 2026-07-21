@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>큐넷 자격증 시험일정 대시보드</title>
+<title>큐넷 자격증 시험일정</title>
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
@@ -44,6 +44,13 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
     background: var(--bg);
     color: var(--text);
+  }
+  .page {
+    max-width: 880px;
+    margin: 0 auto;
+    background: var(--card);
+    min-height: 100vh;
+    box-shadow: 0 0 0 1px var(--border);
   }
   header {
     padding: 24px 28px 16px;
@@ -113,8 +120,6 @@
   }
   main {
     padding: 20px 28px 60px;
-    max-width: 1200px;
-    margin: 0 auto;
   }
   #stats {
     display: flex;
@@ -331,6 +336,8 @@
 </head>
 <body>
 
+<div class="page">
+
 <header>
   <h1>큐넷 자격증 시험일정 대시보드</h1>
   <p>공공데이터포털 · 한국산업인력공단(Q-Net) Open API 기반</p>
@@ -371,6 +378,18 @@
   <div id="empty">표시할 시험일정이 없어요. 검색어나 필터를 바꿔보세요.</div>
 </main>
 
+<footer>
+  데이터 출처: <a href="https://www.data.go.kr/data/15074408/openapi.do" target="_blank">한국산업인력공단_국가자격 시험일정 조회 서비스</a>
+  · fetch_qnet.py로 최신 데이터를 다시 받아오면 이 페이지도 자동으로 갱신돼요.
+  <div class="links">
+    <a href="privacy.html">개인정보처리방침</a>
+    ·
+    <a href="mailto:sanahai71@gmail.com">문의</a>
+  </div>
+</footer>
+
+</div>
+
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <button class="modal-close" id="modal-close" aria-label="닫기">✕</button>
@@ -410,16 +429,6 @@
   </div>
 </div>
 
-<footer>
-  데이터 출처: <a href="https://www.data.go.kr/data/15074408/openapi.do" target="_blank">한국산업인력공단_국가자격 시험일정 조회 서비스</a>
-  · fetch_qnet.py로 최신 데이터를 다시 받아오면 이 페이지도 자동으로 갱신돼요.
-  <div class="links">
-    <a href="privacy.html">개인정보처리방침</a>
-    ·
-    <a href="mailto:sanahai71@gmail.com">문의</a>
-  </div>
-</footer>
-
 <script>
 async function loadJSON(path) {
   const res = await fetch(path, { cache: "no-store" });
@@ -442,7 +451,6 @@ function fmt(dateStr) {
 }
 
 function pickNextEvent(item) {
-  // 카드에 표시할 대표 D-day: 앞으로 남은 이벤트 중 가장 가까운 것
   const events = [
     { label: "필기 접수 시작", date: item._docRegStart },
     { label: "필기 접수 마감", date: item._docRegEnd },
@@ -464,7 +472,6 @@ function pickNextEvent(item) {
   }
   if (best) return best;
 
-  // 미래 이벤트가 없으면 가장 최근 지난 이벤트를 보여줌
   let latestPast = null;
   for (const e of events) {
     const d = daysUntil(e.date);
@@ -537,7 +544,6 @@ function closeModal() {
 }
 
 function makeInFeedAd() {
-  // 카드 목록 사이에 끼워 넣는 인피드 광고. 승인 후 data-ad-slot 값을 교체하세요.
   const wrap = document.createElement("div");
   wrap.className = "ad-slot ad-slot-infeed";
   wrap.style.height = "100px";
@@ -550,7 +556,6 @@ function makeInFeedAd() {
          data-ad-layout-key="-6t+ed+2i-1n-4w"></ins>
     <span class="placeholder-label">광고 영역</span>
   `;
-  // 애드센스 스크립트가 로드돼 있으면 새로 추가된 슬롯도 렌더링 요청
   try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
   return wrap;
 }
@@ -595,7 +600,7 @@ function render() {
     emptyEl.style.display = "none";
   }
 
-  const AD_EVERY = 5; // 카드 5개마다 인피드 광고 한 번
+  const AD_EVERY = 5;
   let cardIndex = 0;
 
   for (const { item, next } of withNext) {
@@ -691,17 +696,14 @@ async function init() {
       데이터를 불러오지 못했어요: ${e.message}<br>
       먼저 <code>fetch_qnet.py</code>를 실행해서 <code>data/schedules.json</code>을 만들어야 하고,
       이 페이지는 <code>python -m http.server</code>로 로컬 서버를 띄운 뒤 열어야 정상 작동해요.
-      (파일을 더블클릭해서 바로 열면 브라우저 보안 정책 때문에 데이터를 못 읽어요.)
     `;
   }
 }
 
 init();
 
-// 상단 배너 광고 렌더링 요청 (애드센스 스크립트가 로드된 경우에만 동작)
 try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
 
-// PWA 오프라인 지원 (앱스토어/플레이스토어 래핑 시에도 유리)
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
