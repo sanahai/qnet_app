@@ -9,9 +9,6 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <meta name="theme-color" content="#2563eb" />
 
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
-        crossorigin="anonymous"></script>
-
 <style>
   :root {
     --bg: #f6f7f9;
@@ -41,23 +38,25 @@
     box-shadow: 0 0 0 1px var(--border);
   }
   header {
-    padding: 24px 28px 16px;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
+    padding: 32px 24px 26px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    text-align: center;
   }
   header h1 {
-    margin: 0 0 4px;
-    font-size: 20px;
+    margin: 0 0 6px;
+    font-size: 22px;
+    color: #fff;
+    font-weight: 800;
   }
   header p {
     margin: 0;
-    color: var(--muted);
+    color: rgba(255,255,255,0.85);
     font-size: 13px;
   }
   #meta-banner {
     margin-top: 10px;
     font-size: 12px;
-    color: var(--muted);
+    color: rgba(255,255,255,0.75);
   }
   #error-banner {
     display: none;
@@ -173,8 +172,9 @@
     font-size: 15px;
   }
   .card .desc {
-    color: var(--muted);
-    font-size: 12px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
     margin-top: 2px;
   }
   .timeline {
@@ -198,13 +198,15 @@
     margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    justify-content: center;
+    gap: 12px;
   }
   .phase-box {
-    flex: 1;
-    min-width: 160px;
+    flex: 1 1 220px;
+    min-width: 220px;
+    max-width: 300px;
     border-radius: 10px;
-    padding: 10px 12px;
+    padding: 12px 16px;
     font-size: 12px;
     border: 1px solid transparent;
   }
@@ -213,33 +215,38 @@
     color: var(--muted);
     flex: none;
   }
-  .phase-written {
+  /* 지난 일정(더 이상 다가오는 날짜가 없는 단계)은 무채색으로,
+     아직 시작 전/진행중인(다가오는 날짜가 있는) 단계는 파란 박스로 강조한다. */
+  .phase-upcoming {
     background: var(--accent-soft);
     border-color: #cfe0ff;
   }
-  .phase-practical {
-    background: #fff4e5;
-    border-color: #ffe1b3;
+  .phase-past {
+    background: #f3f4f6;
+    border-color: var(--border);
   }
   .phase-title {
     font-weight: 700;
-    margin-bottom: 6px;
-    font-size: 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
   }
-  .phase-written .phase-title { color: var(--accent); }
-  .phase-practical .phase-title { color: #b45309; }
+  .phase-upcoming .phase-title { color: var(--accent); }
+  .phase-past .phase-title { color: var(--muted); }
   .phase-row {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
-    padding: 2px 0;
+    gap: 10px;
+    padding: 3px 0;
+    white-space: nowrap;
   }
   .phase-row .phase-label {
     color: var(--muted);
+    white-space: nowrap;
   }
   .phase-row .phase-value {
     font-weight: 600;
     text-align: right;
+    white-space: nowrap;
   }
   .dday {
     text-align: right;
@@ -282,7 +289,7 @@
     color: var(--muted);
     font-size: 12px;
     overflow: hidden;
-    min-height: 90px;
+    min-height: 140px;
   }
   .ad-slot .placeholder-label {
     padding: 8px;
@@ -313,7 +320,7 @@
   .modal {
     background: var(--card);
     border-radius: 14px;
-    max-width: 640px;
+    max-width: 720px;
     width: 100%;
     padding: 22px 24px 24px;
   }
@@ -325,13 +332,10 @@
     color: var(--muted);
     cursor: pointer;
   }
-  .modal h2 {
-    margin: 0 0 4px;
-    font-size: 18px;
-  }
   .modal .modal-desc {
-    color: var(--muted);
-    font-size: 13px;
+    color: var(--text);
+    font-size: 19px;
+    font-weight: 800;
     margin-bottom: 14px;
   }
   .modal section {
@@ -379,9 +383,9 @@
   .qnet-banner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    text-align: center;
     gap: 10px;
-    margin-top: 10px;
     padding: 14px 16px;
     border-radius: 10px;
     background: linear-gradient(135deg, #2563eb, #1d4ed8);
@@ -391,7 +395,6 @@
     font-weight: 600;
   }
   .qnet-banner:hover { opacity: 0.92; }
-  .qnet-banner-arrow { font-size: 16px; }
 </style>
 </head>
 <body>
@@ -406,14 +409,11 @@
 
 <div id="error-banner"></div>
 
-<div class="ad-slot ad-slot-top" style="height:90px;">
-  <ins class="adsbygoogle"
-       style="display:block; width:100%; height:100%;"
-       data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-       data-ad-slot="0000000000"
-       data-ad-format="horizontal"
-       data-full-width-responsive="true"></ins>
-  <span class="placeholder-label">광고 영역 (애드센스 승인 전에는 비어있습니다)</span>
+<div class="ad-slot ad-slot-top">
+  <script src="https://ads-partners.coupang.com/g.js"></script>
+  <script>
+    new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"680","height":"140","tsource":""});
+  </script>
 </div>
 
 <div class="controls">
@@ -427,12 +427,11 @@
   </select>
   <label class="chip">
     <input type="checkbox" id="only-future" checked />
-    지난 일정 숨기기
+    15일 이내 일정만 보기
   </label>
 </div>
 
 <main>
-  <div id="stats"></div>
   <div id="search-hint"></div>
   <div class="cards" id="cards"></div>
   <div id="empty">표시할 시험일정이 없어요. 검색어나 필터를 바꿔보세요.</div>
@@ -453,7 +452,6 @@
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <button class="modal-close" id="modal-close" aria-label="닫기">✕</button>
-    <h2 id="modal-title"></h2>
     <div class="modal-desc" id="modal-desc"></div>
     <div class="timeline" id="modal-timeline"></div>
 
@@ -468,26 +466,16 @@
     </section>
 
     <section>
-      <h4>응시 수수료</h4>
-      <div class="fee-note">
-        종목/등급/재료비에 따라 응시료가 달라 API로 일괄 제공되지 않아요. 정확한 금액은 큐넷 공식 페이지에서 확인하세요:
-        <a href="https://www.q-net.or.kr/rcv011.do?id=rcv01102" target="_blank">필기시험 수수료</a> ·
-        <a href="https://www.q-net.or.kr/rcv013.do?id=rcv01305" target="_blank">실기시험 수수료 종목검색</a>
-      </div>
       <a class="qnet-banner" href="https://www.q-net.or.kr" target="_blank" rel="noopener">
         <span>큐넷(Q-Net)에서 원서 접수 · 공지사항 바로 확인하기</span>
-        <span class="qnet-banner-arrow">→</span>
       </a>
     </section>
 
-    <div class="ad-slot" style="height:90px;">
-      <ins class="adsbygoogle"
-           style="display:block; width:100%; height:100%;"
-           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-           data-ad-slot="2222222222"
-           data-ad-format="horizontal"
-           data-full-width-responsive="true"></ins>
-      <span class="placeholder-label">광고 영역</span>
+    <div class="ad-slot">
+      <script src="https://ads-partners.coupang.com/g.js"></script>
+      <script>
+        new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"680","height":"140","tsource":""});
+      </script>
     </div>
   </div>
 </div>
@@ -546,41 +534,54 @@ function pickNextEvent(item) {
 
 // 필기 / 실기·면접 을 서로 다른 박스로 나눠서 보여준다.
 // 날짜가 하나도 없는 단계는 아예 박스를 만들지 않는다 (예: 필기 없이 실기만 있는 종목).
+// 그리고 이미 다 지나간 단계(다가오는 날짜가 하나도 없는 단계)도 아예 보여주지 않고,
+// 아직 진행 중이거나 앞으로 있을 단계만 파란 박스로 표시한다.
+function isRowUpcoming(dateStr) {
+  const n = daysUntil(dateStr);
+  return n !== null && n >= 0;
+}
+
 function renderTimelineBoxes(item) {
   const writtenRows = [
-    { label: "접수기간", value: (item._docRegStart || item._docRegEnd) ? `${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}` : null },
-    { label: "시험일", value: (item._docExamStart || item._docExamEnd) ? `${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}` : null },
-    { label: "합격발표", value: item._docPass ? fmt(item._docPass) : null },
+    { label: "접수기간", value: (item._docRegStart || item._docRegEnd) ? `${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}` : null, upcoming: isRowUpcoming(item._docRegEnd) || isRowUpcoming(item._docRegStart) },
+    { label: "시험일", value: (item._docExamStart || item._docExamEnd) ? `${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}` : null, upcoming: isRowUpcoming(item._docExamEnd) || isRowUpcoming(item._docExamStart) },
+    { label: "합격발표", value: item._docPass ? fmt(item._docPass) : null, upcoming: isRowUpcoming(item._docPass) },
   ].filter(r => r.value);
 
   const practicalRows = [
-    { label: "접수기간", value: (item._pracRegStart || item._pracRegEnd) ? `${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}` : null },
-    { label: "시험일", value: (item._pracExamStart || item._pracExamEnd) ? `${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}` : null },
-    { label: "최종합격발표", value: item._pracPass ? fmt(item._pracPass) : null },
+    { label: "접수기간", value: (item._pracRegStart || item._pracRegEnd) ? `${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}` : null, upcoming: isRowUpcoming(item._pracRegEnd) || isRowUpcoming(item._pracRegStart) },
+    { label: "시험일", value: (item._pracExamStart || item._pracExamEnd) ? `${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}` : null, upcoming: isRowUpcoming(item._pracExamEnd) || isRowUpcoming(item._pracExamStart) },
+    { label: "최종합격발표", value: item._pracPass ? fmt(item._pracPass) : null, upcoming: isRowUpcoming(item._pracPass) },
   ].filter(r => r.value);
 
-  const boxHtml = (title, rows, cls) => `
-    <div class="phase-box ${cls}">
+  const boxHtml = (title, rows) => `
+    <div class="phase-box phase-upcoming">
       <div class="phase-title">${title}</div>
       ${rows.map(r => `<div class="phase-row"><span class="phase-label">${r.label}</span><span class="phase-value">${r.value}</span></div>`).join("")}
     </div>
   `;
 
+  // 단계 전체가 이미 다 지나갔으면(모든 날짜가 과거면) 그 박스는 아예 표시하지 않는다.
+  const writtenUpcoming = writtenRows.some(r => r.upcoming);
+  const practicalUpcoming = practicalRows.some(r => r.upcoming);
+
   let html = "";
-  if (writtenRows.length > 0) html += boxHtml("필기시험", writtenRows, "phase-written");
-  if (practicalRows.length > 0) html += boxHtml("실기/면접시험", practicalRows, "phase-practical");
-  if (!html) html = `<div class="phase-box phase-empty">일정 정보 없음</div>`;
+  if (writtenRows.length > 0 && writtenUpcoming) html += boxHtml("필기시험", writtenRows);
+  if (practicalRows.length > 0 && practicalUpcoming) html += boxHtml("실기/면접시험", practicalRows);
+  if (!html) html = `<div class="phase-box phase-empty">진행 중인 일정이 없어요 (모든 단계 종료)</div>`;
 
   return `<div class="phase-boxes">${html}</div>`;
 }
 
-function anyFutureEvent(item) {
+// 표시되는 일정이 너무 많다는 피드백이 있어서, "15일 이내 일정만 보기"를 켜면
+// 오늘부터 15일 이내에 뭔가(접수/시험/발표) 일어나는 항목만 남긴다.
+function hasUpcomingWithinDays(item, days) {
   const dates = [item._docRegStart, item._docRegEnd, item._docExamStart, item._docExamEnd,
                  item._docPass, item._pracRegStart, item._pracRegEnd, item._pracExamStart,
                  item._pracExamEnd, item._pracPass];
   return dates.some(d => {
     const n = daysUntil(d);
-    return n !== null && n >= 0;
+    return n !== null && n >= 0 && n <= days;
   });
 }
 
@@ -631,8 +632,6 @@ function cleanQnetText(text) {
 }
 
 function openModal(item, searchQuery) {
-  document.getElementById("modal-title").textContent =
-    `${item.qualgbNmKo || item.qualgbNm || ""} · ${item.implYy}년 제${item.implSeq}회`;
   document.getElementById("modal-desc").textContent = item.description || "";
 
   const tl = document.getElementById("modal-timeline");
@@ -690,27 +689,30 @@ function openModal(item, searchQuery) {
   }
 
   document.getElementById("modal-overlay").classList.add("open");
-  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
 }
 
 function closeModal() {
   document.getElementById("modal-overlay").classList.remove("open");
 }
 
+// 쿠팡파트너스 스크립트는 innerHTML로 넣으면 브라우저가 실행해주지 않기 때문에
+// (스크립트 태그는 innerHTML로 삽입되면 실행되지 않는 게 브라우저 표준 동작),
+// createElement로 직접 만들어서 appendChild 해야 실제로 광고가 로드된다.
+function loadCoupangAd(container) {
+  const g = document.createElement("script");
+  g.src = "https://ads-partners.coupang.com/g.js";
+  g.onload = () => {
+    const init = document.createElement("script");
+    init.textContent = `new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"680","height":"140","tsource":""});`;
+    container.appendChild(init);
+  };
+  container.appendChild(g);
+}
+
 function makeInFeedAd() {
   const wrap = document.createElement("div");
   wrap.className = "ad-slot ad-slot-infeed";
-  wrap.style.height = "100px";
-  wrap.innerHTML = `
-    <ins class="adsbygoogle"
-         style="display:block; width:100%; height:100%;"
-         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-         data-ad-slot="1111111111"
-         data-ad-format="fluid"
-         data-ad-layout-key="-6t+ed+2i-1n-4w"></ins>
-    <span class="placeholder-label">광고 영역</span>
-  `;
-  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+  loadCoupangAd(wrap);
   return wrap;
 }
 
@@ -724,7 +726,7 @@ function render() {
 
   let filtered = SCHEDULES.filter(item => {
     if (qualgb && item.qualgbCd !== qualgb) return false;
-    if (onlyFuture && !anyFutureEvent(item)) return false;
+    if (onlyFuture && !hasUpcomingWithinDays(item, 15)) return false;
     if (q) {
       const hay = `${item.qualgbNmKo || ""} ${item.description || ""} ${item.implYy || ""} ${item.implSeq || ""}`.toLowerCase();
       const direct = hay.includes(q);
@@ -796,10 +798,6 @@ function render() {
 
     card.innerHTML = `
       <div>
-        <div class="title-row">
-          <span class="badge">${item.qualgbNmKo || item.qualgbNm || ""}</span>
-          <h3>${item.implYy}년 제${item.implSeq}회</h3>
-        </div>
         <div class="desc">${item.description || ""}</div>
         ${renderTimelineBoxes(item)}
       </div>
@@ -808,11 +806,6 @@ function render() {
     card.addEventListener("click", () => openModal(item, q));
     cardsEl.appendChild(card);
   }
-
-  document.getElementById("stats").innerHTML = `
-    <div class="stat-card">표시된 일정<b>${withNext.length}</b></div>
-    <div class="stat-card">전체 수집된 일정<b>${SCHEDULES.length}</b></div>
-  `;
 }
 
 async function init() {
@@ -867,8 +860,6 @@ async function init() {
 }
 
 init();
-
-try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
