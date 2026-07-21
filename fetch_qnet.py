@@ -61,30 +61,45 @@ QUALGB_NAMES = {
 }
 
 
-def fetch_qualification_list(service_key: str) -> list:
+def fetch_qualification_list(service_key: str, max_retries: int = 3) -> list:
     """종목(자격명) 목록을 가져온다."""
     print("[1/2] 국가자격 종목 목록 수집 중...")
-    resp = requests.get(
-        QUAL_LIST_URL,
-        params={"serviceKey": service_key},
-        headers=HEADERS,
-        timeout=30,
-    )
-    resp.raise_for_status()
-    root = ET.fromstring(resp.content)
+    last_error = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            resp = requests.get(
+                QUAL_LIST_URL,
+                params={"serviceKey": service_key},
+                headers=HEADERS,
+                timeout=30,
+            )
+            resp.raise_for_status()
+            root = ET.fromstring(resp.content)
 
-    items = []
-    for item in root.iter("item"):
-        rec = {child.tag: (child.text or "").strip() for child in item}
-        items.append(rec)
+            items = []
+            for item in root.iter("item"):
+                rec = {child.tag: (child.text or "").strip() for child in item}
+                items.append(rec)
 
-    if not items:
-        # 인증키 오류 등 확인을 위해 원문 일부 출력
-        print("  경고: 종목 목록이 비어 있습니다. 응답 원문 일부:")
-        print(" ", resp.text[:500])
-    else:
-        print(f"  -> {len(items)}개 종목 수집 완료")
-    return items
+            if items:
+                print(f"  -> {len(items)}개 종목 수집 완료")
+                return items
+
+            print("  경고: 종목 목록이 비어 있습니다. 응답 원문 일부:")
+            print(" ", resp.text[:500])
+            return items
+
+        except ET.ParseError as e:
+            last_error = e
+            print(f"  경고: XML 파싱 실패 ({attempt}/{max_retries}차 시도): {e}")
+            try:
+                print("  응답 원문 일부:", resp.text[:500])
+            except Exception:
+                pass
+            time.sleep(2 * attempt)
+
+    print(f"  실패: {max_retries}번 재시도했지만 계속 실패했습니다: {last_error}")
+    return []
 
 
 def fetch_qualification_detail(service_key: str, jm_cd: str) -> list:
