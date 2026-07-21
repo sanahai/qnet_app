@@ -23,16 +23,16 @@ jobs:
       - name: 의존성 설치
         run: pip install requests
 
-      - name: 시험일정 수집
+      - name: 시험일정 + 과목정보 수집
         env:
           QNET_SERVICE_KEY: ${{ secrets.QNET_SERVICE_KEY }}
         run: |
-          python fetch_qnet.py --service-key "$QNET_SERVICE_KEY" --years $(date +%Y) $(( $(date +%Y) + 1 ))
+          python fetch_qnet.py --service-key "$QNET_SERVICE_KEY" --years $(date +%Y) $(( $(date +%Y) + 1 )) --with-details
 
       - name: 변경사항 커밋
         run: |
           git config user.name "qnet-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/*.json
-          git diff --cached --quiet || git commit -m "chore: 시험일정 데이터 자동 갱신"
+          git diff --cached --quiet || git commit -m "chore: 시험일정/과목정보 데이터 자동 갱신"
           git push
