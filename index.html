@@ -700,8 +700,15 @@ function closeModal() {
 // 680px보다 좁은 화면에서는 광고가 화면 밖으로 삐져나가 좌우 스크롤이 생겼다.
 // 그래서 실제 컨테이너 너비에 맞춰 width/height를 매번 다시 계산해서 넣어준다.
 function loadCoupangAd(container) {
+  if (!container) return;
   const maxW = 680;
-  const available = container.clientWidth || container.parentElement.clientWidth || window.innerWidth;
+  // 피드 중간 광고는 아직 화면에 붙기 전(appendChild 되기 전)에 이 함수가 불릴 수 있어서
+  // container.clientWidth가 0이고 container.parentElement도 null일 수 있다.
+  // parentElement를 곧바로 참조하면 null.clientWidth를 읽으려다 에러가 나므로
+  // 안전하게 하나씩 순서대로 확인한다.
+  let available = container.clientWidth;
+  if (!available && container.parentElement) available = container.parentElement.clientWidth;
+  if (!available) available = window.innerWidth;
   const width = Math.max(300, Math.min(maxW, Math.floor(available)));
   const height = Math.round(width * (140 / 680));
 
@@ -732,7 +739,6 @@ function loadCoupangAd(container) {
 function makeInFeedAd() {
   const wrap = document.createElement("div");
   wrap.className = "ad-slot ad-slot-infeed";
-  loadCoupangAd(wrap);
   return wrap;
 }
 
@@ -800,7 +806,10 @@ function render() {
 
   for (const { item, next } of withNext) {
     if (cardIndex > 0 && cardIndex % AD_EVERY === 0) {
-      cardsEl.appendChild(makeInFeedAd());
+      const adEl = makeInFeedAd();
+      cardsEl.appendChild(adEl);
+      // DOM에 실제로 붙은 뒤에 불러야 컨테이너 너비를 정확히 잴 수 있다.
+      loadCoupangAd(adEl);
     }
     cardIndex++;
 
