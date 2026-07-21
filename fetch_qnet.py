@@ -285,8 +285,28 @@ def main():
     details_by_jmcd = {}
     if args.with_details:
         print("[3/3] 종목별 자격정보(과목/검정방법 등) 수집 중...")
-        target_codes = args.jmcd if args.jmcd else sorted(jmcd_to_name.keys())
         detail_path = os.path.join(out_dir, "qual_details.json")
+
+        # 큐넷 서버가 원래 느리고 자주 타임아웃 나서, 613개를 한 번에 다 받는 게
+        # 매번 성공하리라는 보장이 없다. 그래서 이전에 이미 성공적으로 받아둔
+        # 종목은 다시 요청하지 않고 그대로 유지하고, 아직 못 받은(실패했던) 종목만
+        # 골라서 재시도한다. 이렇게 하면 매일 자동 실행될 때마다 수집률이
+        # 조금씩 늘어나서 결국 전체가 다 채워진다.
+        if os.path.exists(detail_path):
+            try:
+                with open(detail_path, "r", encoding="utf-8") as f:
+                    details_by_jmcd = json.load(f)
+                print(f"  기존에 수집된 {len(details_by_jmcd)}개 종목 정보를 불러왔습니다 (재수집 생략).")
+            except Exception as e:
+                print(f"  경고: 기존 qual_details.json을 읽지 못해 새로 시작합니다: {e}")
+                details_by_jmcd = {}
+
+        if args.jmcd:
+            target_codes = args.jmcd
+        else:
+            target_codes = [c for c in sorted(jmcd_to_name.keys()) if c not in details_by_jmcd]
+            print(f"  아직 못 받은 종목 {len(target_codes)}개만 새로 수집합니다 (전체 {len(jmcd_to_name)}개 중).")
+
         for i, jm_cd in enumerate(target_codes, 1):
             # 종목 하나에서 무슨 일이 나든(타임아웃, 파싱 오류 등) 전체 스크립트가
             # 죽어서는 안 된다 - 이미 받은 시험일정까지 커밋 못 하고 날아가기 때문.
