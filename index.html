@@ -9,18 +9,6 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png" />
 <meta name="theme-color" content="#2563eb" />
 
-<!--
-  ============================================================
-  구글 애드센스 안내
-  ============================================================
-  1) 아래 스크립트의 ca-pub-XXXXXXXXXXXXXXXX 를 애드센스 승인 후
-     발급받는 본인의 게시자 ID로 바꿔주세요.
-  2) 이 스크립트는 승인 전에는 아무 광고도 표시하지 않습니다.
-     (애드센스는 "실제로 배포된 사이트"에 대해서만 심사/승인합니다.)
-  3) 아래 <ins class="adsbygoogle"> 슬롯들도 data-ad-client와
-     data-ad-slot 값을 애드센스 관리자화면에서 발급받은 값으로 교체하세요.
-  ============================================================
--->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
         crossorigin="anonymous"></script>
 
@@ -120,6 +108,16 @@
   }
   main {
     padding: 20px 28px 60px;
+  }
+  #search-hint {
+    display: none;
+    margin: -8px 0 16px;
+    padding: 10px 14px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
   }
   #stats {
     display: flex;
@@ -227,7 +225,6 @@
   footer .links { margin-top: 6px; }
   footer .links a { margin: 0 6px; }
 
-  /* 광고 슬롯 */
   .ad-slot {
     background: var(--card);
     border: 1px dashed var(--border);
@@ -346,7 +343,6 @@
 
 <div id="error-banner"></div>
 
-<!-- 상단 배너 광고: 애드센스 승인 후 data-ad-client / data-ad-slot 값을 교체하세요 -->
 <div class="ad-slot ad-slot-top" style="height:90px;">
   <ins class="adsbygoogle"
        style="display:block; width:100%; height:100%;"
@@ -358,7 +354,7 @@
 </div>
 
 <div class="controls">
-  <input type="text" id="search" placeholder="자격구분/설명 검색 (예: 정보처리, 기능사, 국가전문자격...)" />
+  <input type="text" id="search" placeholder="자격구분/설명/종목명 검색 (예: 전기기능사, 정보처리, 기능사...)" />
   <select id="qualgb-filter">
     <option value="">전체 자격구분</option>
   </select>
@@ -374,6 +370,7 @@
 
 <main>
   <div id="stats"></div>
+  <div id="search-hint"></div>
   <div class="cards" id="cards"></div>
   <div id="empty">표시할 시험일정이 없어요. 검색어나 필터를 바꿔보세요.</div>
 </main>
@@ -416,7 +413,6 @@
       </div>
     </section>
 
-    <!-- 모달 내 인피드 광고: 애드센스 승인 후 data-ad-slot 값을 교체하세요 -->
     <div class="ad-slot" style="height:90px;">
       <ins class="adsbygoogle"
            style="display:block; width:100%; height:100%;"
@@ -496,6 +492,23 @@ let QUALGB_SET = new Set();
 let QUALIFICATIONS = [];
 let QUAL_DETAILS = {};
 
+function getMatchingSeries(q) {
+  if (!q) return [];
+  const seen = new Set();
+  const result = [];
+  for (const item of QUALIFICATIONS) {
+    const name = (item.jmfldnm || "").toLowerCase();
+    if (name.includes(q)) {
+      const key = `${item.qualgbcd}::${item.seriesnm}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push({ qualgbcd: item.qualgbcd, seriesnm: item.seriesnm, jmfldnm: item.jmfldnm });
+      }
+    }
+  }
+  return result;
+}
+
 function openModal(item) {
   document.getElementById("modal-title").textContent =
     `${item.qualgbNmKo || item.qualgbNm || ""} · ${item.implYy}년 제${item.implSeq}회`;
@@ -566,12 +579,18 @@ function render() {
   const onlyFuture = document.getElementById("only-future").checked;
   const sortOrder = document.getElementById("sort-order").value;
 
+  const matchingSeries = getMatchingSeries(q);
+
   let filtered = SCHEDULES.filter(item => {
     if (qualgb && item.qualgbCd !== qualgb) return false;
     if (onlyFuture && !anyFutureEvent(item)) return false;
     if (q) {
       const hay = `${item.qualgbNmKo || ""} ${item.description || ""} ${item.implYy || ""} ${item.implSeq || ""}`.toLowerCase();
-      if (!hay.includes(q)) return false;
+      const direct = hay.includes(q);
+      const viaSeries = matchingSeries.some(s =>
+        s.qualgbcd === item.qualgbCd && item.description && item.description.includes(s.seriesnm)
+      );
+      if (!direct && !viaSeries) return false;
     }
     return true;
   });
@@ -592,12 +611,25 @@ function render() {
 
   const cardsEl = document.getElementById("cards");
   const emptyEl = document.getElementById("empty");
+  const hintEl = document.getElementById("search-hint");
   cardsEl.innerHTML = "";
 
   if (withNext.length === 0) {
     emptyEl.style.display = "block";
   } else {
     emptyEl.style.display = "none";
+  }
+
+  const directHit = q && SCHEDULES.some(item => {
+    const hay = `${item.qualgbNmKo || ""} ${item.description || ""}`.toLowerCase();
+    return hay.includes(q);
+  });
+  if (q && matchingSeries.length > 0 && !directHit) {
+    const names = [...new Set(matchingSeries.map(s => s.seriesnm))].join(", ");
+    hintEl.style.display = "block";
+    hintEl.textContent = `"${q}"의 개별 시행일정은 따로 없고, 같은 계열(${names})의 공통 시험일정으로 안내돼요. 큐넷이 종목별이 아닌 계열 단위로 일정을 제공하기 때문이에요.`;
+  } else {
+    hintEl.style.display = "none";
   }
 
   const AD_EVERY = 5;
