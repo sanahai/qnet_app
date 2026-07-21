@@ -24,6 +24,10 @@
     --ok-soft: #e9f9ee;
   }
   * { box-sizing: border-box; }
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
@@ -36,6 +40,7 @@
     background: var(--card);
     min-height: 100vh;
     box-shadow: 0 0 0 1px var(--border);
+    overflow-x: hidden;
   }
   header {
     padding: 32px 24px 26px;
@@ -409,12 +414,7 @@
 
 <div id="error-banner"></div>
 
-<div class="ad-slot ad-slot-top">
-  <script src="https://ads-partners.coupang.com/g.js"></script>
-  <script>
-    new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"680","height":"140","tsource":""});
-  </script>
-</div>
+<div class="ad-slot ad-slot-top" id="ad-slot-top"></div>
 
 <div class="controls">
   <input type="text" id="search" placeholder="자격구분/설명/종목명 검색 (예: 전기기능사, 정보처리, 기능사...)" />
@@ -471,12 +471,7 @@
       </a>
     </section>
 
-    <div class="ad-slot">
-      <script src="https://ads-partners.coupang.com/g.js"></script>
-      <script>
-        new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"680","height":"140","tsource":""});
-      </script>
-    </div>
+    <div class="ad-slot" id="ad-slot-modal"></div>
   </div>
 </div>
 
@@ -700,11 +695,20 @@ function closeModal() {
 // 부르면 브라우저가 그걸 막아버려서 광고 자리가 빈 채로 남는다(실제로 이 문제가 있었음).
 // 그래서 별도의 빈 iframe을 하나 만들고, 그 iframe 문서 안에서만 document.write로
 // 스크립트를 실행하게 하면 안전하게 광고가 뜬다.
+//
+// 또한 원래 스니펫은 width/height가 680/140으로 고정돼 있어서, 모바일 화면처럼
+// 680px보다 좁은 화면에서는 광고가 화면 밖으로 삐져나가 좌우 스크롤이 생겼다.
+// 그래서 실제 컨테이너 너비에 맞춰 width/height를 매번 다시 계산해서 넣어준다.
 function loadCoupangAd(container) {
+  const maxW = 680;
+  const available = container.clientWidth || container.parentElement.clientWidth || window.innerWidth;
+  const width = Math.max(300, Math.min(maxW, Math.floor(available)));
+  const height = Math.round(width * (140 / 680));
+
   const iframe = document.createElement("iframe");
   iframe.style.width = "100%";
-  iframe.style.maxWidth = "680px";
-  iframe.style.height = "140px";
+  iframe.style.maxWidth = width + "px";
+  iframe.style.height = height + "px";
   iframe.style.border = "none";
   iframe.style.display = "block";
   iframe.scrolling = "no";
@@ -713,11 +717,12 @@ function loadCoupangAd(container) {
   const doc = iframe.contentWindow.document;
   doc.open();
   doc.write(`
-    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <!DOCTYPE html><html><head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
     <body style="margin:0;padding:0;overflow:hidden;">
       <script src="https://ads-partners.coupang.com/g.js"><\/script>
       <script>
-        new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"680","height":"140","tsource":""});
+        new PartnersCoupang.G({"id":1009073,"template":"carousel","trackingCode":"AF5788516","width":"${width}","height":"${height}","tsource":""});
       <\/script>
     </body></html>
   `);
@@ -875,6 +880,9 @@ async function init() {
 }
 
 init();
+
+loadCoupangAd(document.getElementById("ad-slot-top"));
+loadCoupangAd(document.getElementById("ad-slot-modal"));
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
