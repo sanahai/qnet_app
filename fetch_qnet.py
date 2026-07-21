@@ -124,9 +124,9 @@ def fetch_schedule(service_key: str, impl_yy: str, qualgb_cd: str) -> list:
                 "implYy": impl_yy,
                 "qualgbCd": qualgb_cd,
             },
+            headers=HEADERS,
             timeout=30,
         )
-        headers=HEADERS,
         resp.raise_for_status()
 
         try:
