@@ -1,1 +1,15 @@
-{"generated_at": null, "years": [], "qualgb": [], "schedule_count": 0, "qualification_count": 0, "with_details": false, "detail_count": 0, "note": "fetch_qnet.py를 실행하면 이 파일들이 실제 데이터로 채워집니다."}
+{
+  "generated_at": "2026-07-21T03:14:50.885585",
+  "years": [
+    "2026",
+    "2027"
+  ],
+  "qualgb": [
+    "T",
+    "S"
+  ],
+  "schedule_count": 0,
+  "qualification_count": 613,
+  "with_details": false,
+  "detail_count": 0
+}
