@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>큐넷 자격증 시험일정 대시보드</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<meta name="theme-color" content="#2563eb" />
+
+<!--
+  ============================================================
+  구글 애드센스 안내
+  ============================================================
+  1) 아래 스크립트의 ca-pub-XXXXXXXXXXXXXXXX 를 애드센스 승인 후
+     발급받는 본인의 게시자 ID로 바꿔주세요.
+  2) 이 스크립트는 승인 전에는 아무 광고도 표시하지 않습니다.
+     (애드센스는 "실제로 배포된 사이트"에 대해서만 심사/승인합니다.)
+  3) 아래 <ins class="adsbygoogle"> 슬롯들도 data-ad-client와
+     data-ad-slot 값을 애드센스 관리자화면에서 발급받은 값으로 교체하세요.
+  ============================================================
+-->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+        crossorigin="anonymous"></script>
+
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --border: #e3e6ea;
+    --text: #1f2430;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent-soft: #eaf1ff;
+    --danger: #dc2626;
+    --danger-soft: #fdeaea;
+    --ok: #16a34a;
+    --ok-soft: #e9f9ee;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 24px 28px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  #meta-banner {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  #error-banner {
+    display: none;
+    margin: 16px 28px 0;
+    padding: 12px 16px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 28px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .controls input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .controls select {
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+  }
+  .controls label.chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  main {
+    padding: 20px 28px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  #stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .stat-card b {
+    display: block;
+    font-size: 20px;
+    color: var(--text);
+    margin-top: 2px;
+  }
+  .cards {
+    display: grid;
+    gap: 12px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: start;
+  }
+  .card .title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .card h3 {
+    margin: 0;
+    font-size: 15px;
+  }
+  .card .desc {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .timeline {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .tl-item {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: var(--text);
+  }
+  .tl-item .lbl {
+    color: var(--muted);
+    margin-right: 4px;
+  }
+  .dday {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .dday .num {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .dday .sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .dday.soon .num { color: var(--danger); }
+  .dday.ok .num { color: var(--ok); }
+  .dday.past .num { color: var(--muted); }
+  #empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 0;
+    display: none;
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 20px;
+  }
+  footer a { color: var(--accent); }
+  footer .links { margin-top: 6px; }
+  footer .links a { margin: 0 6px; }
+
+  /* 광고 슬롯 */
+  .ad-slot {
+    background: var(--card);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 12px;
+    overflow: hidden;
+    min-height: 90px;
+  }
+  .ad-slot .placeholder-label {
+    padding: 8px;
+    text-align: center;
+  }
+  .ad-slot-top {
+    margin: 16px 28px 0;
+  }
+  .ad-slot-infeed {
+    margin: 4px 0;
+  }
+
+  .card { cursor: pointer; }
+  .card:hover { border-color: var(--accent); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 50;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    max-width: 640px;
+    width: 100%;
+    padding: 22px 24px 24px;
+  }
+  .modal-close {
+    float: right;
+    border: none;
+    background: none;
+    font-size: 18px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .modal h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+  }
+  .modal .modal-desc {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  .modal section {
+    margin-top: 18px;
+  }
+  .modal section h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .modal select, .modal input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  .detail-block {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .detail-block .infogb {
+    font-weight: 600;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+  .fee-note {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--accent-soft);
+    padding: 10px 14px;
+    border-radius: 8px;
+  }
+  .fee-note a { color: var(--accent); }
+  .modal .ad-slot { margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>큐넷 자격증 시험일정 대시보드</h1>
+  <p>공공데이터포털 · 한국산업인력공단(Q-Net) Open API 기반</p>
+  <div id="meta-banner"></div>
+</header>
+
+<div id="error-banner"></div>
+
+<!-- 상단 배너 광고: 애드센스 승인 후 data-ad-client / data-ad-slot 값을 교체하세요 -->
+<div class="ad-slot ad-slot-top" style="height:90px;">
+  <ins class="adsbygoogle"
+       style="display:block; width:100%; height:100%;"
+       data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+       data-ad-slot="0000000000"
+       data-ad-format="horizontal"
+       data-full-width-responsive="true"></ins>
+  <span class="placeholder-label">광고 영역 (애드센스 승인 전에는 비어있습니다)</span>
+</div>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="자격구분/설명 검색 (예: 정보처리, 기능사, 국가전문자격...)" />
+  <select id="qualgb-filter">
+    <option value="">전체 자격구분</option>
+  </select>
+  <select id="sort-order">
+    <option value="upcoming">가까운 접수/시험일 순</option>
+    <option value="latest">최근 등록 순</option>
+  </select>
+  <label class="chip">
+    <input type="checkbox" id="only-future" checked />
+    지난 일정 숨기기
+  </label>
+</div>
+
+<main>
+  <div id="stats"></div>
+  <div class="cards" id="cards"></div>
+  <div id="empty">표시할 시험일정이 없어요. 검색어나 필터를 바꿔보세요.</div>
+</main>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close" aria-label="닫기">✕</button>
+    <h2 id="modal-title"></h2>
+    <div class="modal-desc" id="modal-desc"></div>
+    <div class="timeline" id="modal-timeline"></div>
+
+    <section>
+      <h4>과목 정보 조회</h4>
+      <div id="modal-jmcd-help" style="font-size:12px;color:var(--muted);margin-bottom:8px;">
+        이 회차에는 여러 종목이 함께 시행돼요. 정확한 시험과목/검정방법/합격기준을 보려면 아래에서 본인이 응시할 종목을 선택하세요.
+      </div>
+      <input type="text" id="modal-jm-search" placeholder="종목명 검색 (예: 정보처리기사)" list="modal-jm-list" />
+      <datalist id="modal-jm-list"></datalist>
+      <div id="modal-detail-result"></div>
+    </section>
+
+    <section>
+      <h4>응시 수수료</h4>
+      <div class="fee-note">
+        종목/등급/재료비에 따라 응시료가 달라 API로 일괄 제공되지 않아요. 정확한 금액은 큐넷 공식 페이지에서 확인하세요:
+        <a href="https://www.q-net.or.kr/rcv011.do?id=rcv01102" target="_blank">필기시험 수수료</a> ·
+        <a href="https://www.q-net.or.kr/rcv013.do?id=rcv01305" target="_blank">실기시험 수수료 종목검색</a>
+      </div>
+    </section>
+
+    <!-- 모달 내 인피드 광고: 애드센스 승인 후 data-ad-slot 값을 교체하세요 -->
+    <div class="ad-slot" style="height:90px;">
+      <ins class="adsbygoogle"
+           style="display:block; width:100%; height:100%;"
+           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+           data-ad-slot="2222222222"
+           data-ad-format="horizontal"
+           data-full-width-responsive="true"></ins>
+      <span class="placeholder-label">광고 영역</span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  데이터 출처: <a href="https://www.data.go.kr/data/15074408/openapi.do" target="_blank">한국산업인력공단_국가자격 시험일정 조회 서비스</a>
+  · fetch_qnet.py로 최신 데이터를 다시 받아오면 이 페이지도 자동으로 갱신돼요.
+  <div class="links">
+    <a href="privacy.html">개인정보처리방침</a>
+    ·
+    <a href="mailto:sanahai71@gmail.com">문의</a>
+  </div>
+</footer>
+
+<script>
+async function loadJSON(path) {
+  const res = await fetch(path, { cache: "no-store" });
+  if (!res.ok) throw new Error(`${path} 를 불러오지 못했어요 (${res.status})`);
+  return res.json();
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const target = new Date(dateStr);
+  target.setHours(0,0,0,0);
+  return Math.round((target - today) / 86400000);
+}
+
+function fmt(dateStr) {
+  if (!dateStr) return "-";
+  return dateStr;
+}
+
+function pickNextEvent(item) {
+  // 카드에 표시할 대표 D-day: 앞으로 남은 이벤트 중 가장 가까운 것
+  const events = [
+    { label: "필기 접수 시작", date: item._docRegStart },
+    { label: "필기 접수 마감", date: item._docRegEnd },
+    { label: "필기 시험일", date: item._docExamStart },
+    { label: "필기 합격 발표", date: item._docPass },
+    { label: "실기/면접 접수 시작", date: item._pracRegStart },
+    { label: "실기/면접 접수 마감", date: item._pracRegEnd },
+    { label: "실기/면접 시험일", date: item._pracExamStart },
+    { label: "최종 합격 발표", date: item._pracPass },
+  ].filter(e => e.date);
+
+  let best = null;
+  for (const e of events) {
+    const d = daysUntil(e.date);
+    if (d === null) continue;
+    if (d >= 0 && (best === null || d < best.d)) {
+      best = { ...e, d };
+    }
+  }
+  if (best) return best;
+
+  // 미래 이벤트가 없으면 가장 최근 지난 이벤트를 보여줌
+  let latestPast = null;
+  for (const e of events) {
+    const d = daysUntil(e.date);
+    if (d === null) continue;
+    if (latestPast === null || d > latestPast.d) latestPast = { ...e, d };
+  }
+  return latestPast;
+}
+
+function anyFutureEvent(item) {
+  const dates = [item._docRegStart, item._docRegEnd, item._docExamStart, item._docExamEnd,
+                 item._docPass, item._pracRegStart, item._pracRegEnd, item._pracExamStart,
+                 item._pracExamEnd, item._pracPass];
+  return dates.some(d => {
+    const n = daysUntil(d);
+    return n !== null && n >= 0;
+  });
+}
+
+let SCHEDULES = [];
+let QUALGB_SET = new Set();
+let QUALIFICATIONS = [];
+let QUAL_DETAILS = {};
+
+function openModal(item) {
+  document.getElementById("modal-title").textContent =
+    `${item.qualgbNmKo || item.qualgbNm || ""} · ${item.implYy}년 제${item.implSeq}회`;
+  document.getElementById("modal-desc").textContent = item.description || "";
+
+  const tl = document.getElementById("modal-timeline");
+  tl.innerHTML = `
+    <div class="tl-item"><span class="lbl">필기접수</span>${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}</div>
+    <div class="tl-item"><span class="lbl">필기시험</span>${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}</div>
+    <div class="tl-item"><span class="lbl">필기발표</span>${fmt(item._docPass)}</div>
+    <div class="tl-item"><span class="lbl">실기접수</span>${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}</div>
+    <div class="tl-item"><span class="lbl">실기시험</span>${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}</div>
+    <div class="tl-item"><span class="lbl">최종발표</span>${fmt(item._pracPass)}</div>
+  `;
+
+  const relevant = QUALIFICATIONS.filter(q => (q.qualgbcd || q.qualgbCd) === item.qualgbCd);
+  const listEl = document.getElementById("modal-jm-list");
+  listEl.innerHTML = relevant.map(q => `<option value="${q.jmfldnm}">`).join("");
+
+  const searchInput = document.getElementById("modal-jm-search");
+  searchInput.value = "";
+  document.getElementById("modal-detail-result").innerHTML = "";
+  searchInput.oninput = () => {
+    const match = relevant.find(q => q.jmfldnm === searchInput.value.trim());
+    const resultEl = document.getElementById("modal-detail-result");
+    if (!match) { resultEl.innerHTML = ""; return; }
+    const detail = QUAL_DETAILS[match.jmcd];
+    if (!detail || !detail.info || detail.info.length === 0) {
+      resultEl.innerHTML = `<div class="fee-note">이 종목의 상세 과목정보가 아직 수집되지 않았어요. fetch_qnet.py를 --with-details 옵션으로 다시 실행해보세요.</div>`;
+      return;
+    }
+    resultEl.innerHTML = detail.info.map(i => `
+      <div class="detail-block">
+        <span class="infogb">${i.infogb}</span>
+        ${(i.contents || "").replace(/\n/g, "<br>")}
+      </div>
+    `).join("");
+  };
+
+  document.getElementById("modal-overlay").classList.add("open");
+  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+}
+
+function closeModal() {
+  document.getElementById("modal-overlay").classList.remove("open");
+}
+
+function makeInFeedAd() {
+  // 카드 목록 사이에 끼워 넣는 인피드 광고. 승인 후 data-ad-slot 값을 교체하세요.
+  const wrap = document.createElement("div");
+  wrap.className = "ad-slot ad-slot-infeed";
+  wrap.style.height = "100px";
+  wrap.innerHTML = `
+    <ins class="adsbygoogle"
+         style="display:block; width:100%; height:100%;"
+         data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+         data-ad-slot="1111111111"
+         data-ad-format="fluid"
+         data-ad-layout-key="-6t+ed+2i-1n-4w"></ins>
+    <span class="placeholder-label">광고 영역</span>
+  `;
+  // 애드센스 스크립트가 로드돼 있으면 새로 추가된 슬롯도 렌더링 요청
+  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+  return wrap;
+}
+
+function render() {
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const qualgb = document.getElementById("qualgb-filter").value;
+  const onlyFuture = document.getElementById("only-future").checked;
+  const sortOrder = document.getElementById("sort-order").value;
+
+  let filtered = SCHEDULES.filter(item => {
+    if (qualgb && item.qualgbCd !== qualgb) return false;
+    if (onlyFuture && !anyFutureEvent(item)) return false;
+    if (q) {
+      const hay = `${item.qualgbNmKo || ""} ${item.description || ""} ${item.implYy || ""} ${item.implSeq || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const withNext = filtered.map(item => ({ item, next: pickNextEvent(item) }));
+
+  if (sortOrder === "upcoming") {
+    withNext.sort((a, b) => {
+      const da = a.next ? a.next.d : Infinity;
+      const db = b.next ? b.next.d : Infinity;
+      return da - db;
+    });
+  } else {
+    withNext.sort((a, b) => {
+      return (b.item.implYy + b.item.implSeq).localeCompare(a.item.implYy + a.item.implSeq);
+    });
+  }
+
+  const cardsEl = document.getElementById("cards");
+  const emptyEl = document.getElementById("empty");
+  cardsEl.innerHTML = "";
+
+  if (withNext.length === 0) {
+    emptyEl.style.display = "block";
+  } else {
+    emptyEl.style.display = "none";
+  }
+
+  const AD_EVERY = 5; // 카드 5개마다 인피드 광고 한 번
+  let cardIndex = 0;
+
+  for (const { item, next } of withNext) {
+    if (cardIndex > 0 && cardIndex % AD_EVERY === 0) {
+      cardsEl.appendChild(makeInFeedAd());
+    }
+    cardIndex++;
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    let ddayHtml = `<div class="dday"><div class="num">-</div><div class="sub">일정 없음</div></div>`;
+    if (next) {
+      let cls = "ok";
+      if (next.d < 0) cls = "past";
+      else if (next.d <= 7) cls = "soon";
+      const label = next.d < 0 ? `${Math.abs(next.d)}일 지남` : (next.d === 0 ? "D-DAY" : `D-${next.d}`);
+      ddayHtml = `<div class="dday ${cls}"><div class="num">${label}</div><div class="sub">${next.label}<br>${fmt(next.date)}</div></div>`;
+    }
+
+    card.innerHTML = `
+      <div>
+        <div class="title-row">
+          <span class="badge">${item.qualgbNmKo || item.qualgbNm || ""}</span>
+          <h3>${item.implYy}년 제${item.implSeq}회</h3>
+        </div>
+        <div class="desc">${item.description || ""}</div>
+        <div class="timeline">
+          <div class="tl-item"><span class="lbl">필기접수</span>${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}</div>
+          <div class="tl-item"><span class="lbl">필기시험</span>${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}</div>
+          <div class="tl-item"><span class="lbl">필기발표</span>${fmt(item._docPass)}</div>
+          <div class="tl-item"><span class="lbl">실기접수</span>${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}</div>
+          <div class="tl-item"><span class="lbl">실기시험</span>${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}</div>
+          <div class="tl-item"><span class="lbl">최종발표</span>${fmt(item._pracPass)}</div>
+        </div>
+      </div>
+      ${ddayHtml}
+    `;
+    card.addEventListener("click", () => openModal(item));
+    cardsEl.appendChild(card);
+  }
+
+  document.getElementById("stats").innerHTML = `
+    <div class="stat-card">표시된 일정<b>${withNext.length}</b></div>
+    <div class="stat-card">전체 수집된 일정<b>${SCHEDULES.length}</b></div>
+  `;
+}
+
+async function init() {
+  const errorEl = document.getElementById("error-banner");
+  try {
+    const [schedules, meta, qualifications, qualDetails] = await Promise.all([
+      loadJSON("data/schedules.json"),
+      loadJSON("data/meta.json").catch(() => null),
+      loadJSON("data/qualifications.json").catch(() => []),
+      loadJSON("data/qual_details.json").catch(() => ({})),
+    ]);
+    SCHEDULES = schedules;
+    QUALIFICATIONS = qualifications;
+    QUAL_DETAILS = qualDetails;
+
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+    document.getElementById("modal-overlay").addEventListener("click", (e) => {
+      if (e.target.id === "modal-overlay") closeModal();
+    });
+
+    if (meta) {
+      document.getElementById("meta-banner").textContent =
+        `마지막 수집: ${new Date(meta.generated_at).toLocaleString("ko-KR")} · ${meta.years.join(", ")}년 · 자격구분 ${meta.qualgb.join(", ")}`;
+    }
+
+    const qualgbSelect = document.getElementById("qualgb-filter");
+    const seen = new Map();
+    for (const s of SCHEDULES) {
+      if (s.qualgbCd) seen.set(s.qualgbCd, s.qualgbNmKo || s.qualgbNm || s.qualgbCd);
+    }
+    for (const [code, name] of seen) {
+      const opt = document.createElement("option");
+      opt.value = code;
+      opt.textContent = name;
+      qualgbSelect.appendChild(opt);
+    }
+
+    document.getElementById("search").addEventListener("input", render);
+    document.getElementById("qualgb-filter").addEventListener("change", render);
+    document.getElementById("sort-order").addEventListener("change", render);
+    document.getElementById("only-future").addEventListener("change", render);
+
+    render();
+  } catch (e) {
+    errorEl.style.display = "block";
+    errorEl.innerHTML = `
+      데이터를 불러오지 못했어요: ${e.message}<br>
+      먼저 <code>fetch_qnet.py</code>를 실행해서 <code>data/schedules.json</code>을 만들어야 하고,
+      이 페이지는 <code>python -m http.server</code>로 로컬 서버를 띄운 뒤 열어야 정상 작동해요.
+      (파일을 더블클릭해서 바로 열면 브라우저 보안 정책 때문에 데이터를 못 읽어요.)
+    `;
+  }
+}
+
+init();
+
+// 상단 배너 광고 렌더링 요청 (애드센스 스크립트가 로드된 경우에만 동작)
+try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+
+// PWA 오프라인 지원 (앱스토어/플레이스토어 래핑 시에도 유리)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js").catch(() => {});
+}
+</script>
+
+</body>
+</html>

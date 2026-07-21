@@ -1,0 +1,17 @@
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 에디터
+.vscode/
+.idea/
+
+# 실제 인증키를 로컬 테스트용으로 파일에 저장했다면 커밋되지 않도록
+service_key.txt
+.env
