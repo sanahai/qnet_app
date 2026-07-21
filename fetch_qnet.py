@@ -35,6 +35,7 @@
 
 import argparse
 import datetime
+import functools
 import json
 import os
 import sys
@@ -42,6 +43,10 @@ import time
 import xml.etree.ElementTree as ET
 
 import requests
+
+# GitHub Actions 로그 창에서 print()가 스크립트가 끝날 때까지 하나도 안 보이는
+# 문제(출력 버퍼링)를 막기 위해, 모든 print를 즉시 flush 되도록 강제한다.
+print = functools.partial(print, flush=True)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
@@ -123,7 +128,7 @@ def fetch_qualification_detail(service_key: str, jm_cd: str, max_retries: int = 
                 QUAL_DETAIL_URL,
                 params={"ServiceKey": service_key, "jmCd": jm_cd},
                 headers=HEADERS,
-                timeout=30,
+                timeout=15,
             )
             resp.raise_for_status()
             root = ET.fromstring(resp.content)
@@ -136,7 +141,7 @@ def fetch_qualification_detail(service_key: str, jm_cd: str, max_retries: int = 
             last_error = e
             time.sleep(1 * attempt)
 
-    print(f"    경고: {jm_cd} 상세정보 조회 실패(건너뜀): {last_error}")
+    print(f"    경고: {jm_cd} 상세정보 조회 실패(건너뜀): {last_error}", flush=True)
     return []
 
 
@@ -298,16 +303,16 @@ def main():
                     }
                 detail_count += 1
             except Exception as e:
-                print(f"    경고: {jm_cd} 처리 중 예외 발생(건너뜀): {e}")
+                print(f"    경고: {jm_cd} 처리 중 예외 발생(건너뜀): {e}", flush=True)
 
-            if i % 25 == 0:
-                print(f"    ... {i}/{len(target_codes)}")
+            if i % 10 == 0:
+                print(f"    ... {i}/{len(target_codes)}", flush=True)
                 # 중간중간 저장해두면, 혹시 중간에 워크플로가 타임아웃 나도
                 # 그때까지 모은 데이터는 남는다.
                 with open(detail_path, "w", encoding="utf-8") as f:
                     json.dump(details_by_jmcd, f, ensure_ascii=False, indent=2)
 
-            time.sleep(0.15)
+            time.sleep(0.1)
 
         with open(detail_path, "w", encoding="utf-8") as f:
             json.dump(details_by_jmcd, f, ensure_ascii=False, indent=2)
