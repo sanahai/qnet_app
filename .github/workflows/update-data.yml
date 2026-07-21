@@ -26,8 +26,9 @@ jobs:
       - name: 시험일정 + 과목정보 수집
         env:
           QNET_SERVICE_KEY: ${{ secrets.QNET_SERVICE_KEY }}
+          PYTHONUNBUFFERED: "1"
         run: |
-          python fetch_qnet.py --service-key "$QNET_SERVICE_KEY" --years $(date +%Y) $(( $(date +%Y) + 1 )) --with-details
+          python -u fetch_qnet.py --service-key "$QNET_SERVICE_KEY" --years $(date +%Y) $(( $(date +%Y) + 1 )) --with-details
 
       - name: 변경사항 커밋
         run: |
