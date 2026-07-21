@@ -194,6 +194,53 @@
     color: var(--muted);
     margin-right: 4px;
   }
+  .phase-boxes {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .phase-box {
+    flex: 1;
+    min-width: 160px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    border: 1px solid transparent;
+  }
+  .phase-box.phase-empty {
+    background: #f3f4f6;
+    color: var(--muted);
+    flex: none;
+  }
+  .phase-written {
+    background: var(--accent-soft);
+    border-color: #cfe0ff;
+  }
+  .phase-practical {
+    background: #fff4e5;
+    border-color: #ffe1b3;
+  }
+  .phase-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .phase-written .phase-title { color: var(--accent); }
+  .phase-practical .phase-title { color: #b45309; }
+  .phase-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+  }
+  .phase-row .phase-label {
+    color: var(--muted);
+  }
+  .phase-row .phase-value {
+    font-weight: 600;
+    text-align: right;
+  }
   .dday {
     text-align: right;
     white-space: nowrap;
@@ -477,6 +524,36 @@ function pickNextEvent(item) {
   return latestPast;
 }
 
+// 필기 / 실기·면접 을 서로 다른 박스로 나눠서 보여준다.
+// 날짜가 하나도 없는 단계는 아예 박스를 만들지 않는다 (예: 필기 없이 실기만 있는 종목).
+function renderTimelineBoxes(item) {
+  const writtenRows = [
+    { label: "접수기간", value: (item._docRegStart || item._docRegEnd) ? `${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}` : null },
+    { label: "시험일", value: (item._docExamStart || item._docExamEnd) ? `${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}` : null },
+    { label: "합격발표", value: item._docPass ? fmt(item._docPass) : null },
+  ].filter(r => r.value);
+
+  const practicalRows = [
+    { label: "접수기간", value: (item._pracRegStart || item._pracRegEnd) ? `${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}` : null },
+    { label: "시험일", value: (item._pracExamStart || item._pracExamEnd) ? `${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}` : null },
+    { label: "최종합격발표", value: item._pracPass ? fmt(item._pracPass) : null },
+  ].filter(r => r.value);
+
+  const boxHtml = (title, rows, cls) => `
+    <div class="phase-box ${cls}">
+      <div class="phase-title">${title}</div>
+      ${rows.map(r => `<div class="phase-row"><span class="phase-label">${r.label}</span><span class="phase-value">${r.value}</span></div>`).join("")}
+    </div>
+  `;
+
+  let html = "";
+  if (writtenRows.length > 0) html += boxHtml("필기시험", writtenRows, "phase-written");
+  if (practicalRows.length > 0) html += boxHtml("실기/면접시험", practicalRows, "phase-practical");
+  if (!html) html = `<div class="phase-box phase-empty">일정 정보 없음</div>`;
+
+  return `<div class="phase-boxes">${html}</div>`;
+}
+
 function anyFutureEvent(item) {
   const dates = [item._docRegStart, item._docRegEnd, item._docExamStart, item._docExamEnd,
                  item._docPass, item._pracRegStart, item._pracRegEnd, item._pracExamStart,
@@ -522,20 +599,13 @@ function getRelevantQualifications(item) {
   return bySeries.length > 0 ? bySeries : byGb;
 }
 
-function openModal(item) {
+function openModal(item, searchQuery) {
   document.getElementById("modal-title").textContent =
     `${item.qualgbNmKo || item.qualgbNm || ""} · ${item.implYy}년 제${item.implSeq}회`;
   document.getElementById("modal-desc").textContent = item.description || "";
 
   const tl = document.getElementById("modal-timeline");
-  tl.innerHTML = `
-    <div class="tl-item"><span class="lbl">필기접수</span>${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}</div>
-    <div class="tl-item"><span class="lbl">필기시험</span>${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}</div>
-    <div class="tl-item"><span class="lbl">필기발표</span>${fmt(item._docPass)}</div>
-    <div class="tl-item"><span class="lbl">실기접수</span>${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}</div>
-    <div class="tl-item"><span class="lbl">실기시험</span>${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}</div>
-    <div class="tl-item"><span class="lbl">최종발표</span>${fmt(item._pracPass)}</div>
-  `;
+  tl.innerHTML = renderTimelineBoxes(item);
 
   const relevant = getRelevantQualifications(item);
   const listEl = document.getElementById("modal-jm-list");
@@ -544,12 +614,11 @@ function openModal(item) {
   const helpEl = document.getElementById("modal-jmcd-help");
   helpEl.textContent = `이 회차와 관련된 종목 ${relevant.length}개 중에서 본인이 응시할 종목을 선택하면, 정확한 시험과목/검정방법/합격기준을 볼 수 있어요.`;
 
+  const resultEl = document.getElementById("modal-detail-result");
   const searchInput = document.getElementById("modal-jm-search");
-  searchInput.value = "";
-  document.getElementById("modal-detail-result").innerHTML = "";
-  searchInput.oninput = () => {
-    const match = relevant.find(q => q.jmfldnm === searchInput.value.trim());
-    const resultEl = document.getElementById("modal-detail-result");
+
+  const showDetailFor = (jmfldnmValue) => {
+    const match = relevant.find(q => q.jmfldnm === jmfldnmValue.trim());
     if (!match) { resultEl.innerHTML = ""; return; }
     const detail = QUAL_DETAILS[match.jmcd];
     if (!detail || !detail.info || detail.info.length === 0) {
@@ -563,6 +632,24 @@ function openModal(item) {
       </div>
     `).join("");
   };
+
+  searchInput.oninput = () => showDetailFor(searchInput.value);
+
+  // 검색어(예: "전기기능사")로 들어왔다면, 관련 종목 중 그 검색어와 가장 잘 맞는 종목을
+  // 자동으로 선택해서 바로 상세정보를 보여준다. 그러면 사용자가 매번 리스트에서
+  // 다시 찾아야 하는 번거로움이 없어진다.
+  let preselected = "";
+  if (searchQuery) {
+    const q = searchQuery.trim().toLowerCase();
+    const preMatch = relevant.find(qq => (qq.jmfldnm || "").toLowerCase().includes(q));
+    if (preMatch) preselected = preMatch.jmfldnm;
+  }
+  searchInput.value = preselected;
+  if (preselected) {
+    showDetailFor(preselected);
+  } else {
+    resultEl.innerHTML = "";
+  }
 
   document.getElementById("modal-overlay").classList.add("open");
   try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
@@ -676,18 +763,11 @@ function render() {
           <h3>${item.implYy}년 제${item.implSeq}회</h3>
         </div>
         <div class="desc">${item.description || ""}</div>
-        <div class="timeline">
-          <div class="tl-item"><span class="lbl">필기접수</span>${fmt(item._docRegStart)} ~ ${fmt(item._docRegEnd)}</div>
-          <div class="tl-item"><span class="lbl">필기시험</span>${fmt(item._docExamStart)} ~ ${fmt(item._docExamEnd)}</div>
-          <div class="tl-item"><span class="lbl">필기발표</span>${fmt(item._docPass)}</div>
-          <div class="tl-item"><span class="lbl">실기접수</span>${fmt(item._pracRegStart)} ~ ${fmt(item._pracRegEnd)}</div>
-          <div class="tl-item"><span class="lbl">실기시험</span>${fmt(item._pracExamStart)} ~ ${fmt(item._pracExamEnd)}</div>
-          <div class="tl-item"><span class="lbl">최종발표</span>${fmt(item._pracPass)}</div>
-        </div>
+        ${renderTimelineBoxes(item)}
       </div>
       ${ddayHtml}
     `;
-    card.addEventListener("click", () => openModal(item));
+    card.addEventListener("click", () => openModal(item, q));
     cardsEl.appendChild(card);
   }
 
