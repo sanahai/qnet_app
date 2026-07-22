@@ -463,46 +463,35 @@
     gap: 8px;
   }
 
-  .hot-section {
+  .popular-section {
     margin: 16px 28px 0;
   }
-  .hot-section h2 {
+  .popular-section h2 {
     font-size: 14px;
     margin: 0 0 10px;
     display: flex;
     align-items: center;
     gap: 6px;
   }
-  .hot-list {
-    display: flex;
+  .popular-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 4px;
   }
-  .hot-item {
-    flex: 0 0 auto;
-    min-width: 160px;
-    max-width: 200px;
+  .popular-chip {
     background: #fff7ed;
     border: 1px solid #ffe1b3;
     border-radius: 10px;
-    padding: 10px 12px;
+    padding: 14px 10px;
     cursor: pointer;
-    font-size: 12px;
-  }
-  .hot-item .hot-dday {
-    font-weight: 800;
-    color: #b45309;
-    font-size: 15px;
-  }
-  .hot-item .hot-desc {
-    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 700;
     color: var(--text);
-    font-weight: 600;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    text-align: center;
+  }
+  .popular-chip:hover { opacity: 0.85; }
+  @media (max-width: 640px) {
+    .popular-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   .fav-section {
@@ -549,9 +538,9 @@
 
 <div class="ad-slot ad-slot-top" id="ad-slot-top"></div>
 
-<div class="hot-section">
-  <h2>🔥 접수 마감 임박 TOP 5</h2>
-  <div class="hot-list" id="hot-list"></div>
+<div class="popular-section">
+  <h2>⭐ 인기 자격증 TOP 10</h2>
+  <div class="popular-grid" id="popular-grid"></div>
 </div>
 
 <div class="fav-section" id="fav-section" style="display:none;">
@@ -1052,37 +1041,27 @@ function makeInFeedAd() {
   return wrap;
 }
 
-// "그냥 목록만" 있는 게 심심하다는 피드백 반영: 접수마감이 가장 임박한 5개를
-// 필터와 상관없이 항상 위에 노출해서, 딱히 검색하지 않아도 "지금 놓치면 안 되는 것"이
-// 바로 보이게 한다.
-function renderHotList() {
-  const listEl = document.getElementById("hot-list");
-  const withDeadline = SCHEDULES
-    .map(item => {
-      const regEnd = [item._docRegEnd, item._pracRegEnd]
-        .map(d => ({ d, n: daysUntil(d) }))
-        .filter(x => x.n !== null && x.n >= 0)
-        .sort((a, b) => a.n - b.n)[0];
-      return regEnd ? { item, days: regEnd.n, date: regEnd.d } : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.days - b.days)
-    .slice(0, 5);
+// 접수마감 TOP5는 하단 카드 리스트와 내용이 겹쳐서 큰 의미가 없다는 피드백을 반영,
+// 대신 실제로 응시자가 많은 인기 자격증 10개를 5개씩 2줄로 보여준다.
+// 클릭하면 그 자격증과 관련된 일정을 찾아 상세정보(합격률/준비기간 등 포함)를 바로 보여준다.
+function findScheduleForQual(name) {
+  return SCHEDULES.find(item => (item.description || "").includes(name)) || null;
+}
 
-  if (withDeadline.length === 0) {
-    listEl.innerHTML = `<div style="font-size:12px;color:var(--muted);">임박한 접수 마감 일정이 없어요.</div>`;
-    return;
-  }
-
-  listEl.innerHTML = withDeadline.map(({ item, days, date }) => `
-    <div class="hot-item" data-key="${scheduleKey(item)}">
-      <div class="hot-dday">${days === 0 ? "오늘 마감" : `D-${days}`}</div>
-      <div class="hot-desc">${item.description || ""}</div>
-    </div>
-  `).join("");
-
-  listEl.querySelectorAll(".hot-item").forEach((el, i) => {
-    el.addEventListener("click", () => openModal(withDeadline[i].item));
+function renderPopularGrid() {
+  const gridEl = document.getElementById("popular-grid");
+  const names = Object.keys(QUAL_CONTENT);
+  gridEl.innerHTML = names.map(name => `<div class="popular-chip" data-name="${name}">${name}</div>`).join("");
+  gridEl.querySelectorAll(".popular-chip").forEach(el => {
+    el.addEventListener("click", () => {
+      const name = el.dataset.name;
+      const target = findScheduleForQual(name);
+      if (target) {
+        openModal(target, name);
+      } else {
+        alert(`"${name}"의 예정된 시험 일정을 찾을 수 없어요.`);
+      }
+    });
   });
 }
 
@@ -1286,7 +1265,7 @@ async function init() {
     document.getElementById("only-favorites").addEventListener("change", render);
 
     render();
-    renderHotList();
+    renderPopularGrid();
     renderFavAlert();
     checkFavoriteReminders();
   } catch (e) {
