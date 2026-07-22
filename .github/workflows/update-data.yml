@@ -36,4 +36,11 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add data/*.json
           git diff --cached --quiet || git commit -m "chore: 시험일정/과목정보 데이터 자동 갱신"
-          git push
+
+          # 워크플로가 오래 걸리는 동안 원격에 다른 커밋(예: 수동 수정)이 먼저 올라갈 수 있으므로,
+          # push 전에 최신 변경사항을 받아와 리베이스한다. 그래도 실패하면 몇 번 재시도.
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin "$(git rev-parse --abbrev-ref HEAD)" && git push && break
+            echo "push 실패, 재시도 ($i)"
+            sleep 5
+          done
