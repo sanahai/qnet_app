@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-29T06:03:37.579910",
+  "generated_at": "2026-09-30T05:51:07.060468",
   "years": [
     "2026",
     "2027"
@@ -9,7 +9,7 @@
     "S"
   ],
   "schedule_count": 150,
-  "qualification_count": 613,
+  "qualification_count": 0,
   "with_details": true,
   "detail_count": 547
 }
