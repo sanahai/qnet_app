@@ -4170,5 +4170,33 @@
     "_pracExamStart": null,
     "_pracExamEnd": null,
     "_pracPass": null
+  },
+  {
+    "implYy": "2027",
+    "implSeq": 25,
+    "qualgbCd": "S",
+    "qualgbNm": "국가전문자격",
+    "description": "전문자격 (2027년도 25회 필기)",
+    "docRegStartDt": "20261207",
+    "docRegEndDt": "20270108",
+    "docExamStartDt": "20270116",
+    "docExamEndDt": "20270116",
+    "docPassDt": "20270324",
+    "pracRegStartDt": "",
+    "pracRegEndDt": "",
+    "pracExamStartDt": "",
+    "pracExamEndDt": "",
+    "pracPassDt": "",
+    "qualgbNmKo": "국가전문자격",
+    "_docRegStart": "2026-12-07",
+    "_docRegEnd": "2027-01-08",
+    "_docExamStart": "2027-01-16",
+    "_docExamEnd": "2027-01-16",
+    "_docPass": "2027-03-24",
+    "_pracRegStart": null,
+    "_pracRegEnd": null,
+    "_pracExamStart": null,
+    "_pracExamEnd": null,
+    "_pracPass": null
   }
 ]
